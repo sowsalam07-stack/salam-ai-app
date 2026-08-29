@@ -7,10 +7,13 @@ from huggingface_hub import InferenceClient
 app = FastAPI(title="Salam AI Backend API")
 
 HF_TOKEN = os.getenv("HF_TOKEN")
-# Modèle activé sur l'API Serverless gratuite de Hugging Face
 MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
 
-client = InferenceClient(model=MODEL_ID, token=HF_TOKEN)
+# Initialisation explicite du client avec le token s'il existe
+if HF_TOKEN:
+    client = InferenceClient(model=MODEL_ID, token=HF_TOKEN)
+else:
+    client = InferenceClient(model=MODEL_ID)
 
 class Message(BaseModel):
     role: str
@@ -21,7 +24,7 @@ class ChatPayload(BaseModel):
 
 @app.get("/")
 def root():
-    return {"status": "ok", "message": "Backend Salam AI (Qwen2.5) opérationnel"}
+    return {"status": "ok", "message": "Backend Salam AI opérationnel"}
 
 @app.post("/api/chat")
 def chat_endpoint(payload: ChatPayload):
