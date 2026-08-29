@@ -6,13 +6,10 @@ from huggingface_hub import InferenceClient
 
 app = FastAPI(title="Salam AI Backend API")
 
-# Récupération du token Hugging Face configuré sur Render
 HF_TOKEN = os.getenv("HF_TOKEN")
-
-# Identifiant de ton modèle personnalisé expédié au format Safetensors
 MODEL_ID = "Abdoul0/mistral-7b-francais"
 
-# Initialisation du client d'inférence avec ton token Read
+# Configuration du client Hugging Face
 if HF_TOKEN:
     client = InferenceClient(model=MODEL_ID, token=HF_TOKEN)
 else:
@@ -32,8 +29,10 @@ def root():
 @app.post("/api/chat")
 def chat_endpoint(payload: ChatPayload):
     try:
+        # Conversion du format de messages pour l'InferenceClient
         formatted_messages = [{"role": msg.role, "content": msg.content} for msg in payload.messages]
         
+        # Appel via chat_completion
         response = client.chat_completion(
             messages=formatted_messages,
             max_tokens=512,
@@ -41,4 +40,12 @@ def chat_endpoint(payload: ChatPayload):
         )
         return {"response": response.choices[0].message.content}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # Si chat_completion est en attente de chargement du modèle (Warmup)
+        try:
+            # Fallback direct en génération de texte
+            user_prompt = payload.messages[-1].content
+            prompt = f"<s>[INST] {user_prompt} [/INST]"
+            res = client.text_generation(prompt, max_new_tokens=512, temperature=0.7)
+            return {"response": res}
+        except Exception as inner_e:
+            raise HTTPException(status_code=500, detail=str(e))
