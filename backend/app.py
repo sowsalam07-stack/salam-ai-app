@@ -4,12 +4,11 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from huggingface_hub import InferenceClient
 
-# C'est cette variable "app" que Render / Uvicorn cherche
 app = FastAPI(title="Salam AI Backend API")
 
 HF_TOKEN = os.getenv("HF_TOKEN")
-# Ton propre dépôt Hugging Face :
-MODEL_ID = "Abdoul0/mistral-7b-français-gguf"
+# Utilisation d'un modèle compatible avec l'API Serverless gratuite
+MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
 
 client = InferenceClient(model=MODEL_ID, token=HF_TOKEN)
 
@@ -22,7 +21,7 @@ class ChatPayload(BaseModel):
 
 @app.get("/")
 def root():
-    return {"status": "ok", "message": "Backend Salam AI (Mistral-7B Français) opérationnel"}
+    return {"status": "ok", "message": "Backend Salam AI opérationnel"}
 
 @app.post("/api/chat")
 def chat_endpoint(payload: ChatPayload):
